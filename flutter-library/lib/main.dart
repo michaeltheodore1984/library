@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_library/drag.dart';
 import 'package:flutter_library/permission.dart';
+import 'package:flutter_library/scroll.dart';
 import 'package:flutter_library/sheet.dart';
+import 'package:flutter_library/ui.dart';
 import 'package:flutter_library/upload.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -16,8 +18,9 @@ void main() async {
   // Run the app. The home property will call different widgets as they are developed.
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    // home: LogoRotate(),
-    home: ExampleDragAndDrop(),
+    home: UploadWidget(),
+    // home: ScrollWidget(),
+    // home: ExampleDragAndDrop(),
     // home: Sheet(),
     // home: PermissionWidget()
     // home: UploadWidget()

@@ -9,7 +9,6 @@ class ExampleDragAndDrop extends StatefulWidget {
 }
 
 class _ExampleDragAndDropState extends State<ExampleDragAndDrop> {
-
   var angle = 0.0;
 
   @override
@@ -39,7 +38,7 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-             LayoutBuilder(
+            LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 return Draggable(
                   dragAnchorStrategy: childDragAnchorStrategy,
@@ -81,6 +80,3 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop> {
     );
   }
 }
-
-
-

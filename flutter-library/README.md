@@ -54,3 +54,6 @@ DraggableSCrollableSheet widget with image blur and centered title. The image bl
 
 Short code snippett that demonstrates uploading a photo
 from the device image gallery.
+
+### Scroll content horizontally (scroll.dart)
+Use ListView.builder with a SizedBox containing each item in the scrollable list. The width of the SizedBox equals the width of the screen minus 100 pixels or an arbitrary value as long as the content of each list item is not too compact. The height for the list view and consequently for each item is another media query and is 20% of the screen vertically or another arbitrary value.

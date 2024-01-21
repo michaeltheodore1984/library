@@ -52,7 +52,7 @@ class _UploadWidgetState extends State<UploadWidget> {
                 // Build the image upload request
                 var request = http.MultipartRequest('POST', uri)
                   // Email field for auth
-                  ..fields['email'] = 'user@email.com'
+                  ..fields['json_data'] = 'email:mike@email.com'
                   // Use the image path to build a multipart file
                   ..files.add(await http.MultipartFile.fromPath(
                       'file', file!.path,

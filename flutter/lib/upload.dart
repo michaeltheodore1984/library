@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_library/util.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path/path.dart';
 
 class UploadWidget extends StatefulWidget {
   const UploadWidget({super.key});
@@ -16,13 +21,24 @@ class _UploadWidgetState extends State<UploadWidget> {
   late ImagePicker? imagePicker;
   // Using localhost for testing
   var uploadUrl = '192.168.1.2:3000';
+  late File? localImageFile;
+  var box = GetStorage();
   late bool? success;
+  late XFile? imageToUpload;
 
   @override
   void initState() {
     super.initState();
+    localImageFile = null;
     imagePicker = ImagePicker();
+    imageToUpload = null;
     success = null;
+    // Get image path from local storage
+    // TODO: insert path into device database
+    if (box.read('localImagePath') != null) {
+      var p = box.read('localImagePath');
+      localImageFile = File(p);
+    }
   }
 
   @override
@@ -37,39 +53,48 @@ class _UploadWidgetState extends State<UploadWidget> {
 
           ElevatedButton(
               onPressed: () async {
-                // Check for permission
-                if (await Util.getPermission(Permission.photos) !=
-                    PermissionStatus.granted) {
+                var prm = await Util.getPermission(Permission.photos);
+                // Check for permission. PermissionStatus.limited is the user's
+                // choice to grant only certain photos for processing
+                if (prm == PermissionStatus.granted ||
+                    prm == PermissionStatus.limited) {
+                  // Show the image picker
+                  var file =
+                      await imagePicker!.pickImage(source: ImageSource.gallery);
+
+                  // User pressed cancel
+                  if (file == null) {
+                    return;
+                  }
+
+                  // Build the image upload uri
+                  var uri = Uri.http(uploadUrl, '/api/upload');
+
+                  // Build the image upload request
+                  var request = http.MultipartRequest('POST', uri)
+                    // Email field for auth
+                    ..fields['json_data'] = 'abc123:def456'
+                    // Use the image path to build a multipart file
+                    ..files.add(await http.MultipartFile.fromPath(
+                        'file', file!.path,
+                        contentType: MediaType('image', '*')));
+
+                  // Send the photo to the server
+                  var response = await request.send();
+
+                  // Handle response status code. Show either success or failure message.
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      success = true;
+                    });
+                  } else {
+                    setState(() {
+                      success = false;
+                    });
+                  }
+                } else {
                   // TODO: show rationale
                   return;
-                }
-                var file =
-                    await imagePicker!.pickImage(source: ImageSource.gallery);
-
-                // Build the image upload uri
-                var uri = Uri.http(uploadUrl, '/api/upload');
-
-                // Build the image upload request
-                var request = http.MultipartRequest('POST', uri)
-                  // Email field for auth
-                  ..fields['json_data'] = 'email:mike@email.com'
-                  // Use the image path to build a multipart file
-                  ..files.add(await http.MultipartFile.fromPath(
-                      'file', file!.path,
-                      contentType: MediaType('image', '*')));
-
-                // Send the photo to the server
-                var response = await request.send();
-
-                // Handle response status code. Show either success or failure message.
-                if (response.statusCode == 200) {
-                  setState(() {
-                    success = true;
-                  });
-                } else {
-                  setState(() {
-                    success = false;
-                  });
                 }
               },
               child: const Text('CHOOSE PHOTO')),
@@ -96,7 +121,43 @@ class _UploadWidgetState extends State<UploadWidget> {
                 ],
               ),
             ),
-          )
+          ),
+          ElevatedButton(
+              onPressed: () async {
+                // Download the image from the server
+                if (imageToUpload != null) {
+                  var response = await http.get(Uri.http(
+                      uploadUrl, '/api/image/abc123/${imageToUpload!.path}'));
+                  // Set the documents directory on the device
+                  Directory documentDirectory =
+                      await getApplicationDocumentsDirectory();
+
+                  // Save the file with an arbitrary name or give it any name
+                  // as long as it can be retrieved easily in the future.
+                  File file = File(join(documentDirectory.path, 'local.jpg'));
+
+                  // Save the file to the device storage
+                  await file.writeAsBytes(response.bodyBytes);
+
+                  // Save image path to local storage.
+                  // TODO: save image path to device database
+                  box.write('localImagePath', file.path);
+
+                  // Update the image file state and show in UI
+                  setState(() {
+                    localImageFile = file;
+                  });
+                }
+              },
+              child: const Text('Get Images')),
+          localImageFile != null
+              ? Expanded(
+                  child: Image.file(
+                    localImageFile!,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              : Container()
         ],
       ),
     ));

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, abort, send_from_directory
+from flask import Flask, request, abort, send_from_directory, after_this_request
 import imghdr
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
@@ -39,13 +39,15 @@ def upload_file():
     arr = json.split(':')
 
     # When parsing remove the last curly brace
-    email = arr[1].rstrip('}')
+    cuid = arr[0]
+    uid = arr[1]
+    # email = arr[1].rstrip('}')
 
     # Check for a secure file name
     filename = secure_filename(uploaded_file.filename)
 
     # If both the file name and email are empty throw a 400 error
-    if filename != '' and email != '' :
+    if filename != '' and cuid != '' and uid != '' :
         file_ext = os.path.splitext(filename)[1]
 
         # If the image does not have an allowed extension like jpg or jpeg throw a 400 error
@@ -54,11 +56,15 @@ def upload_file():
     else :
         abort(400)
 
-    customer_dir = os.path.join(app.config['UPLOAD_FOLDER'] + email)
+    contractor_dir = os.path.join(app.config['UPLOAD_FOLDER'] + cuid)
     # If the directory where we upload files for a specific user does not exist
     # create the directory
-    if not os.path.isdir(customer_dir) :
-        os.mkdir(customer_dir)
+    if not os.path.isdir(contractor_dir) :
+        os.mkdir(contractor_dir)
+
+    # Create the directory for customer photos for each contractor
+    if not os.path.isdir(contractor_dir + '/' + uid) :
+        os.mkdir(contractor_dir + '/' + uid)
     
     # Upload the file
     # Here we resize the image for bandwidth purposes
@@ -75,12 +81,17 @@ def upload_file():
     image = ImageOps.exif_transpose(image)
 
     # Save the image on disk
-    image.save(os.path.join(app.config['UPLOAD_FOLDER'] + email, filename))
-    # uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'] + email, filename))
+    image.save(os.path.join(contractor_dir +  '/' + uid, filename))
 
     return '', 200
 
 # Serve the images
-@app.route('/api/image/<filename>')
-def upload(filename):
-   return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+@app.route('/api/image/<cuid>/<uid>/<image>')
+def upload(cuid,uid,image):
+   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
+   # Delete the photo after downloading to device to save space on the server
+   @after_this_request
+   def delete_photo(response):
+       os.remove(os.path.join(p, image))
+       return response
+   return send_from_directory(p, image)

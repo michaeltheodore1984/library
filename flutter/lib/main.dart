@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_library/chat.dart';
 import 'package:flutter_library/drag.dart';
 import 'package:flutter_library/permission.dart';
 import 'package:flutter_library/scroll.dart';
@@ -27,7 +28,8 @@ void main() async {
   // Run the app. The home property will call different widgets as they are developed.
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: UploadWidget(),
+    home: Chat(),
+    // home: UploadWidget(),
     // home: ScrollWidget(),
     // home: ExampleDragAndDrop(),
     // home: Sheet(),

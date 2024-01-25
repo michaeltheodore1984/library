@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, abort, send_from_directory, after_this_request
 import imghdr
+import time
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 
@@ -80,12 +81,18 @@ def upload_file():
     # Keep original orientation of image i.e portrait, landscape
     image = ImageOps.exif_transpose(image)
 
-    # Save the image on disk
+    # Use Unix timestamp to name image files
+    timestamp = time.time()
+
+    # Add the correc extension
+    filename = str(timestamp) + os.path.splitext(filename)[1]
+
+    # Save the image to disk
     image.save(os.path.join(contractor_dir +  '/' + uid, filename))
 
     return '', 200
 
-# Serve the images
+""" # Serve the images
 @app.route('/api/image/<cuid>/<uid>/<image>')
 def upload(cuid,uid,image):
    p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
@@ -94,4 +101,10 @@ def upload(cuid,uid,image):
    def delete_photo(response):
        os.remove(os.path.join(p, image))
        return response
+   return send_from_directory(p, image) """
+
+# Serve the images
+@app.route('/api/image/<cuid>/<uid>/<image>')
+def upload(cuid,uid,image):
+   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
    return send_from_directory(p, image)

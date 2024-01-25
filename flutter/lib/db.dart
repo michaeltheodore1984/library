@@ -10,8 +10,9 @@ class Db {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS $conversation (
         _id integer primary key autoincrement,
-        message text not null,
+        message text,
         isImage integer,
+        imageFile text,
         CONSTRAINT unique_message UNIQUE (message)
       )''');
     });
@@ -33,16 +34,18 @@ class Db {
 // The Message object.
 class Message {
   String message = 'def_message';
-  int isImage = 0;
+  String localImagePath = 'def_image_file_path';
+
+  Message(this.message, this.localImagePath);
 
   // Need toMap() to insert as key value pairs into Sqflite.
   Map<String, Object> toMap() {
-    return {'message': message};
+    return {'message': message, 'localImagePath': localImagePath};
   }
 
   // Read message from database key value pairs.
   Message.fromMap(Map<String, Object> map) {
     message = map['message'] as String;
-    isImage = map['isImage'] as int;
+    localImagePath = map['imageFilePath'] as String;
   }
 }

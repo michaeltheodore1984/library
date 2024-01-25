@@ -55,7 +55,7 @@ class _UploadWidgetState extends State<UploadWidget> {
               onPressed: () async {
                 var prm = await Util.getPermission(Permission.photos);
                 // Check for permission. PermissionStatus.limited is the user's
-                // choice to grant only certain photos for processing
+                // choice to grant only certain photos for processing.
                 if (prm == PermissionStatus.granted ||
                     prm == PermissionStatus.limited) {
                   // Show the image picker

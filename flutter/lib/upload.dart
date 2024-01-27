@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_library/util.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -59,29 +60,50 @@ class _UploadWidgetState extends State<UploadWidget> {
                 if (prm == PermissionStatus.granted ||
                     prm == PermissionStatus.limited) {
                   // Show the image picker
-                  var file =
+                  List<XFile> files = await imagePicker!.pickMultiImage();
+                  if(files.isEmpty) {
+                    return;
+                  }
+                  /* var file =
                       await imagePicker!.pickImage(source: ImageSource.gallery);
 
                   // User pressed cancel
                   if (file == null) {
                     return;
-                  }
+                  } */
 
                   // Build the image upload uri
                   var uri = Uri.http(uploadUrl, '/api/upload');
 
-                  // Build the image upload request
+                  var uploadList = <MultipartFile>[];
+                  for(var f in files) {
+                    uploadList.add(await MultipartFile.fromPath('file', f.path));
+                  }
+
+                  /* // Build the image upload request
                   var request = http.MultipartRequest('POST', uri)
                     // Email field for auth
                     ..fields['json_data'] = 'abc123:def456'
                     // Use the image path to build a multipart file
                     ..files.add(await http.MultipartFile.fromPath(
                         'file', file!.path,
-                        contentType: MediaType('image', '*')));
+                        contentType: MediaType('image', '*'))); */
 
+                  var request = MultipartRequest('POST', uri)
+                    ..fields['json_data'] = 'abc123:def456'
+                    ..files.addAll(uploadList);
                   // Send the photo to the server
                   var response = await request.send();
-
+                  var streamedResponse = await Response.fromStream(response);
+                  var streamArr = streamedResponse.body.split(',');
+                  for(var item in streamArr) {
+                    item = item.replaceAll('[', ''); 
+                    item = item.replaceAll(']', '');
+                    item = item.replaceAll('"', '');
+                    item = item.replaceAll('./uploads/', '/api/image/');
+                    // TODO: send each image with fcm. var totalPath = '<host>'+item
+                  }
+                
                   // Handle response status code. Show either success or failure message.
                   if (response.statusCode == 200) {
                     setState(() {

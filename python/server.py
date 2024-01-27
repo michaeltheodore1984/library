@@ -30,8 +30,8 @@ def validate_image(stream):
 
 @app.post('/api/upload')
 def upload_file():
-    # The file in the request object
-    uploaded_file = request.files['file']
+    # The files in the request object file list
+    uploaded_files = request.files.getlist('file')
 
     # The email required to create a directory for the user on the server
     json = request.form.get('json_data')
@@ -39,20 +39,43 @@ def upload_file():
     # Get the email from the json string
     arr = json.split(':')
 
-    # When parsing remove the last curly brace
+    # Get the contractor id and the customer id
     cuid = arr[0]
     uid = arr[1]
-    # email = arr[1].rstrip('}')
 
+    files = []
+
+    for f in uploaded_files :
+        files.append(upload(f, cuid, uid))
+    return files
+
+""" # Serve the images
+@app.route('/api/image/<cuid>/<uid>/<image>')
+def upload(cuid,uid,image):
+   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
+   # Delete the photo after downloading to device to save space on the server
+   @after_this_request
+   def delete_photo(response):
+       os.remove(os.path.join(p, image))
+       return response
+   return send_from_directory(p, image) """
+
+# Serve the images
+@app.route('/api/image/<cuid>/<uid>/<image>')
+def upload(cuid,uid,image):
+   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
+   return send_from_directory(p, image)
+
+def upload(file, cuid, uid) :
     # Check for a secure file name
-    filename = secure_filename(uploaded_file.filename)
-
+    filename = secure_filename(file.filename)
+    
     # If both the file name and email are empty throw a 400 error
     if filename != '' and cuid != '' and uid != '' :
         file_ext = os.path.splitext(filename)[1]
 
         # If the image does not have an allowed extension like jpg or jpeg throw a 400 error
-        if file_ext not in app.config['UPLOAD_EXTENSIONS'] or file_ext != validate_image(uploaded_file.stream) :
+        if file_ext not in app.config['UPLOAD_EXTENSIONS'] or file_ext != validate_image(file.stream) :
             abort(400)
     else :
         abort(400)
@@ -69,7 +92,7 @@ def upload_file():
     
     # Upload the file
     # Here we resize the image for bandwidth purposes
-    image = Image.open(uploaded_file)
+    image = Image.open(file)
 
     # Create the image with a smaller size up to the tuple
     # with dimensions specified. 640 x 480 is sufficient before quality loss
@@ -90,21 +113,4 @@ def upload_file():
     # Save the image to disk
     image.save(os.path.join(contractor_dir +  '/' + uid, filename))
 
-    return '', 200
-
-""" # Serve the images
-@app.route('/api/image/<cuid>/<uid>/<image>')
-def upload(cuid,uid,image):
-   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
-   # Delete the photo after downloading to device to save space on the server
-   @after_this_request
-   def delete_photo(response):
-       os.remove(os.path.join(p, image))
-       return response
-   return send_from_directory(p, image) """
-
-# Serve the images
-@app.route('/api/image/<cuid>/<uid>/<image>')
-def upload(cuid,uid,image):
-   p = app.config['UPLOAD_FOLDER'] + cuid + "/" + uid
-   return send_from_directory(p, image)
+    return os.path.join(contractor_dir +  '/' + uid, filename)

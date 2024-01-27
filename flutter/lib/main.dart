@@ -28,8 +28,8 @@ void main() async {
   // Run the app. The home property will call different widgets as they are developed.
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: Chat(),
-    // home: UploadWidget(),
+    // home: Chat(),
+    home: UploadWidget(),
     // home: ScrollWidget(),
     // home: ExampleDragAndDrop(),
     // home: Sheet(),
